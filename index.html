@@ -871,8 +871,8 @@
 	<!-- END NEW COLOUR PICKER-->
 		
 	<script src="three.js"></script>	
-	<!--<script src="/jsm/loaders/GLTFLoader.js"></script>-->
-	<!--<script src="/jsm/orbitcontrols/OrbitControls.js"></script>-->
+	<!--<script src="./jsm/loaders/GLTFLoader.js"></script>-->
+	<!--<script src="./jsm/orbitcontrols/OrbitControls.js"></script>-->
     <!--<script src="script.js"></script>-->	
 	<script type="module">
 		import { DRACOLoader } from './jsm/draco/DRACOLoader.js';
@@ -1716,7 +1716,7 @@
 		var loader = new GLTFLoader();
 		//DRACO Loader
 		const dracoLoader = new DRACOLoader();
-		dracoLoader.setDecoderPath( '/jsm/draco/' );
+		dracoLoader.setDecoderPath( './jsm/draco/' );
 		loader.setDRACOLoader( dracoLoader );
 
 		const texture_loader = new THREE.TextureLoader();

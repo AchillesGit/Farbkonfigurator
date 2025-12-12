@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css?family=Raleway:500,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="style.css" />
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-	<script type="text/javascript" src="/jsm/ddslick/jquery.ddslick.min.js"></script>
+	<script type="text/javascript" src="./jsm/ddslick/jquery.ddslick.min.js"></script>
     <!-- We add the loader CSS here so that assets don't pop in before the bundled CSS is loaded -->
     <style>
     .loading {
@@ -860,13 +860,13 @@
     </script>	
 	
 	<script src="three.js"></script>
-	<!--<script src="/jsm/loaders/GLTFLoader.js"></script>-->
-	<!--<script src="/jsm/orbitcontrols/OrbitControls.js"></script>-->
+	<!--<script src="./jsm/loaders/GLTFLoader.js"></script>-->
+	<!--<script src="./jsm/orbitcontrols/OrbitControls.js"></script>-->
     <!--<script src="script.js"></script>-->	
 	<script type="module">
 		import { DRACOLoader } from './jsm/draco/DRACOLoader.js';
-		import { GLTFLoader } from '/jsm/loaders/GLTFLoader.js';
-		import { OrbitControls } from '/jsm/orbitcontrols/OrbitControls.js';
+		import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+		import { OrbitControls } from './jsm/orbitcontrols/OrbitControls.js';
 
 		const LOADER = document.getElementById('js-loader');
 
@@ -1704,7 +1704,7 @@
 		var loader = new GLTFLoader();
 		//DRACO Loader
 		const dracoLoader = new DRACOLoader();
-		dracoLoader.setDecoderPath( '/jsm/draco/' );
+		dracoLoader.setDecoderPath( './jsm/draco/' );
 		loader.setDRACOLoader( dracoLoader );
 
 		const texture_loader = new THREE.TextureLoader();
