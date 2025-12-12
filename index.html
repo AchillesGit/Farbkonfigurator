@@ -14,7 +14,7 @@
 	
 	<!-- NEW COLOUR PICKER-->
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-	<script type="text/javascript" src="/jsm/ddslick/jquery.ddslick.min.js"></script>
+	<script type="text/javascript" src="jsm/ddslick/jquery.ddslick.min.js"></script>
 	<!-- END NEW COLOUR PICKER-->
 	
     <!-- We add the loader CSS here so that assets don't pop in before the bundled CSS is loaded -->
@@ -48,7 +48,7 @@
         top: 25px;
         width: 210px;
         height: 50px;
-        background-image: url(/img/logo.png);
+        background-image: url(./img/logo.png);
         animation: flip 2s infinite;
     }
 
@@ -876,8 +876,8 @@
     <!--<script src="script.js"></script>-->	
 	<script type="module">
 		import { DRACOLoader } from './jsm/draco/DRACOLoader.js';
-		import { GLTFLoader } from '/jsm/loaders/GLTFLoader.js';
-		import { OrbitControls } from '/jsm/orbitcontrols/OrbitControls.js';
+		import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+		import { OrbitControls } from './jsm/orbitcontrols/OrbitControls.js';
 
 		const LOADER = document.getElementById('js-loader');
 
@@ -890,7 +890,7 @@
 
 		var theModel;
 
-		const MODEL_PATH = "/model/Bjarne.glb";
+		const MODEL_PATH = "model/Bjarne.glb";
 
 		var activeOption = 'walls_web';
 		var loaded = false;
