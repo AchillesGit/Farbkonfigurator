@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Farbkonfigurator - Bjarne</title>
+    <meta name="description" content="Farbkonfigurator - Bjarne" />
+    <meta name="author" content="Sweet Summer WebDesign" />
+    <link rel="shortcut icon" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css?family=Raleway:500,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="style.css" />
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/jsm/ddslick/jquery.ddslick.min.js"></script>
+    <!-- We add the loader CSS here so that assets don't pop in before the bundled CSS is loaded -->
+    <style>
+    .loading {
+        position: fixed;
+        z-index: 50;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        background: #f1f1f1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loader {
+        -webkit-perspective: 120px;
+        -moz-perspective: 120px;
+        -ms-perspective: 120px;
+        perspective: 120px;
+        width: 100px;
+        height: 100px;
+    }
+
+    .loader::before {
+        content: "";
+        position: absolute;
+        left: 25px;
+        top: 25px;
+        width: 210px;
+        height: 50px;
+        background-image: url(/img/logo.png);
+        animation: flip 2s infinite;
+    }
+
+    @keyframes flip {
+        0% {
+            transform: rotate(0);
+        }
+
+        50% {
+            transform: rotateY(180deg);
+        }
+
+        100% {
+            transform: rotateY(180deg) rotateX(180deg);
+        }
+    }
+    </style>
+</head>
+
+<body>
+    <!-- The loading element overlays all else until the model is loaded, at which point we remove this element from the DOM -->
+    <div class="loading" id="js-loader">
+        <div class="loader"></div>
+    </div>
+    <!-- Just a quick notice to the user that it can be interacted with -->
+    <span class="drag-notice" id="js-drag-notice">Drag to rotate 360&#176;</span>
+	
+	<img class="mouse-controls" src="img/SVG/mouse.png" alt="" />
+	
+    <!-- These toggle the the different parts of the house that can be edited, note data-option is the key that links to the name of the part in the 3D file -->
+    <div class="options">
+        <div class="option" data-option="walls_web">
+            <img src="img/SVG/Fassade.png" alt="" />
+        </div>
+		<div class="option" data-option="wood_corners_web">
+            <img src="img/SVG/Eckbretter.png" alt="" />
+        </div>
+		<div class="option" data-option="under_roof">
+            <img src="img/SVG/Dachkasten.png" alt="" />
+        </div>
+		<div class="option" data-option="windows_borders_web">
+            <img src="img/SVG/Rahmungen.png" alt="" />
+        </div>
+		<div class="option" data-option="Cube">
+            <img src="img/SVG/Zierklotzen.png" alt="" />
+        </div>
+		<div class="option" data-option="wnd">
+            <img src="img/SVG/Fenster.png" alt="" />
+        </div>
+		<div class="option" data-option="terrace">
+            <img src="img/SVG/Terasse.png" alt="" />
+        </div>		
+    </div>
+    <!-- The canvas element is used to draw the 3D scene -->
+    <canvas id="c"></canvas>
+    <div class="controls">
+        <div class="info">
+            <div class="info__message">
+               
+            </div>
+        </div>
+        <!-- This tray will be filled with colors via JS, and the ability to slide this panel will be added in with a lightweight slider script (no dependency used for this) -->
+		<div id="js-tray_tiles" class="tiles">
+            <div id="js-tray-slide_tiles" class="tray__slide"></div>
+        </div>        
+    </div>
+	
+	<div class="colours">
+		<div id="myDD_Fassade"></div>	
+		<div id="myDD_Eckbretter"></div>
+		<div id="myDD_Dachkasten"></div>
+		<div id="myDD_Rahmungen"></div>
+		<div id="myDD_Zierklotzen"></div>
+		<div id="myDD_Fenster"></div>
+		<div id="myDD_Terasse"></div>
+	</div>
+	<script>	
+	//Dropdown plugin data
+	var ddData = [
+		{
+		  imageSrc: '/img/textures/wood/color/210_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/210_txt.jpg',
+		  clr_file: '/img/textures/wood/210_txt_cl.jpg',
+		  text: '210 Hvit',
+		  value: 1,
+		  selected: false,
+		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/211_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/211_txt.jpg',
+		  clr_file: '/img/textures/wood/211_txt_cl.jpg',
+		  text: '211 Neverhvit',
+		  value: 2,
+		  selected: false,
+		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/212_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/212_txt.jpg',
+		  clr_file: '/img/textures/wood/212_txt_cl.jpg',
+		  text: '212 Mork Sand',
+	 	  value: 3,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/213_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/213_txt.jpg',
+		  clr_file: '/img/textures/wood/213_txt_cl.jpg',
+		  text: '213 Nordisk Hvit',
+	 	  value: 4,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/214_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/214_txt.jpg',
+		  clr_file: '/img/textures/wood/214_txt_cl.jpg',
+		  text: '214 Moldehvit',
+	 	  value: 5,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/215_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/215_txt.jpg',
+		  clr_file: '/img/textures/wood/215_txt_cl.jpg',
+		  text: '215 Perlehvit',
+	 	  value: 6,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/216_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/216_txt.jpg',
+		  clr_file: '/img/textures/wood/216_txt_cl.jpg',
+		  text: '216 Edelhvit',
+	 	  value: 7,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/217_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/217_txt.jpg',
+		  clr_file: '/img/textures/wood/217_txt_cl.jpg',
+		  text: '217 Skumring',
+	 	  value: 8,
+		  selected: false,
+ 		  description: ""},	  
+		  {
+		  imageSrc: '/img/textures/wood/color/218_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/218_txt.jpg',
+		  clr_file: '/img/textures/wood/218_txt_cl.jpg',
+		  text: '218 Lyssand',
+	 	  value: 9,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/219_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/219_txt.jpg',
+		  clr_file: '/img/textures/wood/219_txt_cl.jpg',
+		  text: '219 Enggul',
+	 	  value: 10,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/220_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/220_txt.jpg',
+		  clr_file: '/img/textures/wood/220_txt_cl.jpg',
+		  text: '220 Hitra',
+	 	  value: 11,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/222_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/222_txt.jpg',
+		  clr_file: '/img/textures/wood/222_txt_cl.jpg',
+		  text: '222 Vagabrun',
+	 	  value: 12,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/223_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/223_txt.jpg',
+		  clr_file: '/img/textures/wood/223_txt_cl.jpg',
+		  text: '223 Dalabrun',
+	 	  value: 13,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/224_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/224_txt.jpg',
+		  clr_file: '/img/textures/wood/224_txt_cl.jpg',
+		  text: '224 Vaeroy',
+	 	  value: 14,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/225_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/225_txt.jpg',
+		  clr_file: '/img/textures/wood/225_txt_cl.jpg',
+		  text: '225 Ringebu',
+	 	  value: 15,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/230_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/230_txt.jpg',
+		  clr_file: '/img/textures/wood/230_txt_cl.jpg',
+		  text: '230 Herregardsgra',
+	 	  value: 16,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/231_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/231_txt.jpg',
+		  clr_file: '/img/textures/wood/231_txt_cl.jpg',
+		  text: '231 Lys Skifer',
+	 	  value: 17,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/232_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/232_txt.jpg',
+		  clr_file: '/img/textures/wood/232_txt_cl.jpg',
+		  text: '232 Vardegra',
+	 	  value: 18,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/234_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/234_txt.jpg',
+		  clr_file: '/img/textures/wood/234_txt_cl.jpg',
+		  text: '234 Solvgra',
+	 	  value: 19,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/235_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/235_txt.jpg',
+		  clr_file: '/img/textures/wood/235_txt_cl.jpg',
+		  text: '235 Altagra',
+	 	  value: 20,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/236_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/236_txt.jpg',
+		  clr_file: '/img/textures/wood/236_txt_cl.jpg',
+		  text: '236 Finsegra',
+	 	  value: 21,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/237_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/237_txt.jpg',
+		  clr_file: '/img/textures/wood/237_txt_cl.jpg',
+		  text: '237 Lerk',
+	 	  value: 22,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/238_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/238_txt.jpg',
+		  clr_file: '/img/textures/wood/238_txt_cl.jpg',
+		  text: '238 Dovregra',
+	 	  value: 23,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/239_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/239_txt.jpg',
+		  clr_file: '/img/textures/wood/239_txt_cl.jpg',
+		  text: '239 Hafjell',
+	 	  value: 24,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/240_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/240_txt.jpg',
+		  clr_file: '/img/textures/wood/240_txt_cl.jpg',
+		  text: '240 Skoggronn',
+	 	  value: 25,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/241_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/241_txt.jpg',
+		  clr_file: '/img/textures/wood/241_txt_cl.jpg',
+		  text: '241 Einergronn',
+	 	  value: 26,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/242_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/242_txt.jpg',
+		  clr_file: '/img/textures/wood/242_txt_cl.jpg',
+		  text: '242 Furugronn',
+	 	  value: 27,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/243_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/243_txt.jpg',
+		  clr_file: '/img/textures/wood/243_txt_cl.jpg',
+		  text: '243 Seljegronn',
+	 	  value: 28,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/244_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/244_txt.jpg',
+		  clr_file: '/img/textures/wood/244_txt_cl.jpg',
+		  text: '244 Edelgronn',
+	 	  value: 29,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/245_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/245_txt.jpg',
+		  clr_file: '/img/textures/wood/245_txt_cl.jpg',
+		  text: '245 Mosegronn',
+	 	  value: 30,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/246_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/246_txt.jpg',
+		  clr_file: '/img/textures/wood/246_txt_cl.jpg',
+		  text: '246 Telegronn',
+	 	  value: 31,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/247_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/247_txt.jpg',
+		  clr_file: '/img/textures/wood/247_txt_cl.jpg',
+		  text: '247 Skabugronn',
+	 	  value: 32,
+		  selected: false,
+ 		  description: ""},	  
+		  {
+		  imageSrc: '/img/textures/wood/color/250_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/250_txt.jpg',
+		  clr_file: '/img/textures/wood/250_txt_cl.jpg',
+		  text: '250 Raulandsrød',
+	 	  value: 33,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/251_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/251_txt.jpg',
+		  clr_file: '/img/textures/wood/251_txt_cl.jpg',
+		  text: '251 Landrød',
+	 	  value: 34,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/254_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/254_txt.jpg',
+		  clr_file: '/img/textures/wood/254_txt_cl.jpg',
+		  text: '254 Terrakotta',
+	 	  value: 35,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/255_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/255_txt.jpg',
+		  clr_file: '/img/textures/wood/255_txt_cl.jpg',
+		  text: '255 Hardangerrod',
+	 	  value: 36,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/256_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/256_txt.jpg',
+		  clr_file: '/img/textures/wood/256_txt_cl.jpg',
+		  text: '256 Byrod',
+	 	  value: 37,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/260_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/260_txt.jpg',
+		  clr_file: '/img/textures/wood/260_txt_cl.jpg',
+		  text: '260 Staverngul',
+	 	  value: 38,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/261_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/261_txt.jpg',
+		  clr_file: '/img/textures/wood/261_txt_cl.jpg',
+		  text: '261 Herregardsgul',
+	 	  value: 39,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/262_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/262_txt.jpg',
+		  clr_file: '/img/textures/wood/262_txt_cl.jpg',
+		  text: '262 Akergul',
+	 	  value: 40,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/263_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/263_txt.jpg',
+		  clr_file: '/img/textures/wood/263_txt_cl.jpg',
+		  text: '263 Bygul',
+	 	  value: 41,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/264_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/264_txt.jpg',
+		  clr_file: '/img/textures/wood/264_txt_cl.jpg',
+		  text: '264 Gammeloker',
+	 	  value: 42,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/265_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/265_txt.jpg',
+		  clr_file: '/img/textures/wood/265_txt_cl.jpg',
+		  text: '265 Solgul',
+	 	  value: 43,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/269_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/269_txt.jpg',
+		  clr_file: '/img/textures/wood/269_txt_cl.jpg',
+		  text: '269 Keramikk',
+	 	  value: 44,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/281_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/281_txt.jpg',
+		  clr_file: '/img/textures/wood/281_txt_cl.jpg',
+		  text: '281 Hersobla',
+	 	  value: 45,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/285_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/285_txt.jpg',
+		  clr_file: '/img/textures/wood/285_txt_cl.jpg',
+		  text: '285 Fjordbla',
+	 	  value: 46,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/286_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/286_txt.jpg',
+		  clr_file: '/img/textures/wood/286_txt_cl.jpg',
+		  text: '286 Femundbla',
+	 	  value: 47,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/287_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/287_txt.jpg',
+		  clr_file: '/img/textures/wood/287_txt_cl.jpg',
+		  text: '287 Kongebla',
+	 	  value: 48,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/288_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/288_txt.jpg',
+		  clr_file: '/img/textures/wood/288_txt_cl.jpg',
+		  text: '288 Jokul',
+	 	  value: 49,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/299_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/299_txt.jpg',
+		  clr_file: '/img/textures/wood/299_txt_cl.jpg',
+		  text: '299 Sort',
+	 	  value: 50,
+		  selected: false,
+ 		  description: ""}
+	];
+	var ddData_Terracce = [
+		{
+		  imageSrc: '/img/textures/wood/color/127_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/127_txt.jpg',
+		  clr_file: '/img/textures/wood/127_txt_cl.jpg',
+		  text: '127 Klar',
+	 	  value: 1,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/147_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/147_txt.jpg',
+		  clr_file: '/img/textures/wood/147_txt_cl.jpg',
+		  text: '147 Gronn',
+	 	  value: 2,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/171_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/171_txt.jpg',
+		  clr_file: '/img/textures/wood/171_txt_cl.jpg',
+		  text: '171 Mahogny',
+	 	  value: 3,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/172_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/172_txt.jpg',
+		  clr_file: '/img/textures/wood/172_txt_cl.jpg',
+		  text: '172 Teak',
+	 	  value: 4,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/173_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/173_txt.jpg',
+		  clr_file: '/img/textures/wood/173_txt_cl.jpg',
+		  text: '173 Askegra',
+	 	  value: 5,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/174_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/174_txt.jpg',
+		  clr_file: '/img/textures/wood/174_txt_cl.jpg',
+		  text: '174 Parabrun',
+	 	  value: 6,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/175_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/175_txt.jpg',
+		  clr_file: '/img/textures/wood/175_txt_cl.jpg',
+		  text: '175 Koksgra',
+	 	  value: 7,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/402_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/402_txt.jpg',
+		  clr_file: '/img/textures/wood/402_txt_cl.jpg',
+		  text: '402 Gyldengul',
+	 	  value: 8,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/403_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/403_txt.jpg',
+		  clr_file: '/img/textures/wood/403_txt_cl.jpg',
+		  text: '403 Host',
+	 	  value: 9,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/404_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/404_txt.jpg',
+		  clr_file: '/img/textures/wood/404_txt_cl.jpg',
+		  text: '404 Furunal',
+	 	  value: 10,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/407_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/407_txt.jpg',
+		  clr_file: '/img/textures/wood/407_txt_cl.jpg',
+		  text: '407 Ibenholt',
+	 	  value: 11,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/408_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/408_txt.jpg',
+		  clr_file: '/img/textures/wood/408_txt_cl.jpg',
+		  text: '408 Kalket',
+	 	  value: 12,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/409_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/409_txt.jpg',
+		  clr_file: '/img/textures/wood/409_txt_cl.jpg',
+		  text: '409 Lys gra',
+	 	  value: 13,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/411_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/411_txt.jpg',
+		  clr_file: '/img/textures/wood/411_txt_cl.jpg',
+		  text: '411 Setegra',
+	 	  value: 14,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/412_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/412_txt.jpg',
+		  clr_file: '/img/textures/wood/412_txt_cl.jpg',
+		  text: '412 Lonn',
+	 	  value: 15,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/413_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/413_txt.jpg',
+		  clr_file: '/img/textures/wood/413_txt_cl.jpg',
+		  text: '413 Rodlyng',
+	 	  value: 1,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/414_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/414_txt.jpg',
+		  clr_file: '/img/textures/wood/414_txt_cl.jpg',
+		  text: '414 Fjellgra',
+	 	  value: 16,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/421_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/421_txt.jpg',
+		  clr_file: '/img/textures/wood/421_txt_cl.jpg',
+		  text: '421 Gammelbrun',
+	 	  value: 17,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/424_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/424_txt.jpg',
+		  clr_file: '/img/textures/wood/424_txt_cl.jpg',
+		  text: '424 Tommerbrun',
+	 	  value: 18,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/425_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/425_txt.jpg',
+		  clr_file: '/img/textures/wood/425_txt_cl.jpg',
+		  text: '425 Skygra',
+	 	  value: 19,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/426_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/426_txt.jpg',
+		  clr_file: '/img/textures/wood/426_txt_cl.jpg',
+		  text: '426 Gra skifer',
+	 	  value: 20,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/427_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/427_txt.jpg',
+		  clr_file: '/img/textures/wood/427_txt_cl.jpg',
+		  text: '427 Kleber',
+	 	  value: 21,
+		  selected: false,
+ 		  description: ""},
+		  {
+		  imageSrc: '/img/textures/wood/color/428_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/428_txt.jpg',
+		  clr_file: '/img/textures/wood/428_txt_cl.jpg',
+		  text: '428 Granitt',
+	 	  value: 22,
+		  selected: false,
+ 		  description: ""}
+	];	
+    </script>	
+	
+	<script src="three.js"></script>
+	<!--<script src="/jsm/loaders/GLTFLoader.js"></script>-->
+	<!--<script src="/jsm/orbitcontrols/OrbitControls.js"></script>-->
+    <!--<script src="script.js"></script>-->	
+	<script type="module">
+		import { DRACOLoader } from './jsm/draco/DRACOLoader.js';
+		import { GLTFLoader } from '/jsm/loaders/GLTFLoader.js';
+		import { OrbitControls } from '/jsm/orbitcontrols/OrbitControls.js';
+
+		const LOADER = document.getElementById('js-loader');
+
+		//const TRAY = document.getElementById('js-tray-slide');
+		//const TRAY_TERRACE = document.getElementById('js-tray-slide_terrace');
+		const TRAY_TILES = document.getElementById('js-tray-slide_tiles');
+		const DRAG_NOTICE = document.getElementById('js-drag-notice');
+
+		var theModel;
+
+		const MODEL_PATH = "/model/Bjarne.glb";
+
+		var activeOption = 'walls_web';
+		var loaded = false;
+		
+		const colors_terrace = [		  
+		  {
+		  texture: '/img/textures/wood/color/127_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/127_txt.jpg',
+		  clr_file: '/img/textures/wood/127_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/147_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/147_txt.jpg',
+		  clr_file: '/img/textures/wood/147_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/171_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/171_txt.jpg',
+		  clr_file: '/img/textures/wood/171_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/172_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/172_txt.jpg',
+		  clr_file: '/img/textures/wood/172_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/173_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/173_txt.jpg',
+		  clr_file: '/img/textures/wood/173_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/174_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/174_txt.jpg',
+		  clr_file: '/img/textures/wood/174_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/175_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/175_txt.jpg',
+		  clr_file: '/img/textures/wood/175_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/402_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 20, 
+		  txt_file: '/img/textures/wood/402_txt.jpg',
+		  clr_file: '/img/textures/wood/402_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/403_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/403_txt.jpg',
+		  clr_file: '/img/textures/wood/403_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/404_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/404_txt.jpg',
+		  clr_file: '/img/textures/wood/404_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/407_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/407_txt.jpg',
+		  clr_file: '/img/textures/wood/407_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/408_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/408_txt.jpg',
+		  clr_file: '/img/textures/wood/408_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/409_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/409_txt.jpg',
+		  clr_file: '/img/textures/wood/409_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/411_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/411_txt.jpg',
+		  clr_file: '/img/textures/wood/411_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/412_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/412_txt.jpg',
+		  clr_file: '/img/textures/wood/412_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/413_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/413_txt.jpg',
+		  clr_file: '/img/textures/wood/413_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/414_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/414_txt.jpg',
+		  clr_file: '/img/textures/wood/414_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/421_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/421_txt.jpg',
+		  clr_file: '/img/textures/wood/421_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/424_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/424_txt.jpg',
+		  clr_file: '/img/textures/wood/424_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/425_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/425_txt.jpg',
+		  clr_file: '/img/textures/wood/425_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/426_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/426_txt.jpg',
+		  clr_file: '/img/textures/wood/426_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/427_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/427_txt.jpg',
+		  clr_file: '/img/textures/wood/427_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/428_cl.jpg',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/428_txt.jpg',
+		  clr_file: '/img/textures/wood/428_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  ];
+
+		const colors = [		  
+		  {
+		  texture: '/img/textures/wood/color/210_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/210_txt.jpg',
+		  clr_file: '/img/textures/wood/210_txt_cl.jpg',
+		  clr_desc: '210 - Hvit'},
+		  {
+		  texture: '/img/textures/wood/color/211_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/211_txt.jpg',
+		  clr_file: '/img/textures/wood/211_txt_cl.jpg',
+		  clr_desc: '211 - Neverhvit'},
+		  {
+		  texture: '/img/textures/wood/color/212_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/212_txt.jpg',
+		  clr_file: '/img/textures/wood/212_txt_cl.jpg',
+		  clr_desc: '212 - Morksand'},
+		  {
+		  texture: '/img/textures/wood/color/213_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/213_txt.jpg',
+		  clr_file: '/img/textures/wood/213_txt_cl.jpg',
+		  clr_desc: '212 - Morksand'},
+		  {
+		  texture: '/img/textures/wood/color/214_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/214_txt.jpg',
+		  clr_file: '/img/textures/wood/214_txt_cl.jpg',
+		  clr_desc: '214- Moldehvit'},
+		  {
+		  texture: '/img/textures/wood/color/215_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/215_txt.jpg',
+		  clr_file: '/img/textures/wood/215_txt_cl.jpg',
+		  clr_desc: '215 - Perlehvit'},
+		  {
+		  texture: '/img/textures/wood/color/216_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/216_txt.jpg',
+		  clr_file: '/img/textures/wood/216_txt_cl.jpg',
+		  clr_desc: '216 - Edelhvit'},
+		  {
+		  texture: '/img/textures/wood/color/217_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/217_txt.jpg',
+		  clr_file: '/img/textures/wood/217_txt_cl.jpg',
+		  clr_desc: '217 - Raulandsrød'},	  
+		  {
+		  texture: '/img/textures/wood/color/218_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/218_txt.jpg',
+		  clr_file: '/img/textures/wood/218_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/219_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/219_txt.jpg',
+		  clr_file: '/img/textures/wood/219_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/220_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/220_txt.jpg',
+		  clr_file: '/img/textures/wood/220_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/222_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/222_txt.jpg',
+		  clr_file: '/img/textures/wood/222_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/223_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/223_txt.jpg',
+		  clr_file: '/img/textures/wood/223_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/224_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/224_txt.jpg',
+		  clr_file: '/img/textures/wood/224_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/225_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/225_txt.jpg',
+		  clr_file: '/img/textures/wood/225_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/230_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/230_txt.jpg',
+		  clr_file: '/img/textures/wood/230_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/231_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/231_txt.jpg',
+		  clr_file: '/img/textures/wood/231_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/232_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/232_txt.jpg',
+		  clr_file: '/img/textures/wood/232_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/234_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/234_txt.jpg',
+		  clr_file: '/img/textures/wood/234_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/235_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/235_txt.jpg',
+		  clr_file: '/img/textures/wood/235_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/236_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/236_txt.jpg',
+		  clr_file: '/img/textures/wood/236_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/237_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/237_txt.jpg',
+		  clr_file: '/img/textures/wood/237_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/238_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/238_txt.jpg',
+		  clr_file: '/img/textures/wood/238_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/239_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/239_txt.jpg',
+		  clr_file: '/img/textures/wood/239_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/240_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/240_txt.jpg',
+		  clr_file: '/img/textures/wood/240_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/241_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/241_txt.jpg',
+		  clr_file: '/img/textures/wood/241_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/242_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/242_txt.jpg',
+		  clr_file: '/img/textures/wood/242_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/243_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/243_txt.jpg',
+		  clr_file: '/img/textures/wood/243_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/244_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/244_txt.jpg',
+		  clr_file: '/img/textures/wood/244_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/245_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/245_txt.jpg',
+		  clr_file: '/img/textures/wood/245_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/246_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/246_txt.jpg',
+		  clr_file: '/img/textures/wood/246_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/247_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/247_txt.jpg',
+		  clr_file: '/img/textures/wood/247_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},	  
+		  {
+		  texture: '/img/textures/wood/color/250_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/250_txt.jpg',
+		  clr_file: '/img/textures/wood/250_txt_cl.jpg',
+		  clr_desc: '250 - Raulandsrød'},
+		  {
+		  texture: '/img/textures/wood/color/251_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/251_txt.jpg',
+		  clr_file: '/img/textures/wood/251_txt_cl.jpg',
+		  clr_desc: '251 - Landrød'},
+		  {
+		  texture: '/img/textures/wood/color/254_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/254_txt.jpg',
+		  clr_file: '/img/textures/wood/254_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/255_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/255_txt.jpg',
+		  clr_file: '/img/textures/wood/255_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/256_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/256_txt.jpg',
+		  clr_file: '/img/textures/wood/256_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/260_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/260_txt.jpg',
+		  clr_file: '/img/textures/wood/260_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/261_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/261_txt.jpg',
+		  clr_file: '/img/textures/wood/261_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/262_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/262_txt.jpg',
+		  clr_file: '/img/textures/wood/262_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/263_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/263_txt.jpg',
+		  clr_file: '/img/textures/wood/263_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/264_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/264_txt.jpg',
+		  clr_file: '/img/textures/wood/264_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/265_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/265_txt.jpg',
+		  clr_file: '/img/textures/wood/265_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/269_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/269_txt.jpg',
+		  clr_file: '/img/textures/wood/269_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/281_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/281_txt.jpg',
+		  clr_file: '/img/textures/wood/281_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/285_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/285_txt.jpg',
+		  clr_file: '/img/textures/wood/285_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/286_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/286_txt.jpg',
+		  clr_file: '/img/textures/wood/286_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/287_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/287_txt.jpg',
+		  clr_file: '/img/textures/wood/287_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/288_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/288_txt.jpg',
+		  clr_file: '/img/textures/wood/288_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		  {
+		  texture: '/img/textures/wood/color/299_cl.jpg',
+		  size: [1.1, 1.1, 1.1],
+		  shininess: 60, 
+		  txt_file: '/img/textures/wood/299_txt.jpg',
+		  clr_file: '/img/textures/wood/299_txt_cl.jpg',
+		  clr_desc: '218 - Lyssand'},
+		];
+		
+		const colors2 = [		  
+		  {
+		  texture: '/img/roof/tile_black.png',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  color: '0f0f0f',
+		  clr_desc: 'Schwarz'},
+		 {
+		  texture: '/img/roof/tile_granit.png',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  color: '211f1e',
+		  clr_desc: 'Granit'},
+		  {
+		  texture: '/img/roof/tile_brown.png',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  color: '1f1108',
+		  clr_desc: 'Braun'},
+		 {
+		  texture: '/img/roof/tile_green.png',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  color: '1d311a',
+		  clr_desc: 'Grün'},
+		  {
+		  texture: '/img/roof/tile_red.png',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  color: '983832',
+		  clr_desc: 'Rot'},
+		 {
+		  texture: '/img/roof/tile_redbrick.png',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  color: '833528',
+		  clr_desc: 'Ziegelrot'},
+		  {
+		  texture: '/img/roof/tile_blue.png',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  color: '17222f',
+		  clr_desc: 'Blau'},
+		 {
+		  texture: '/img/roof/tile_blanc.png',
+		  size: [0.6, 0.6, 0.6],
+		  shininess: 60, 
+		  color: 'cacaca',
+		  clr_desc: 'Blank'},
+		];
+
+		const BACKGROUND_COLOR = 0x36442F;
+		// Init the scene
+		const scene = new THREE.Scene();
+		// Set background
+		//scene.background = new THREE.Color(BACKGROUND_COLOR);
+		//scene.fog = new THREE.Fog(BACKGROUND_COLOR, 2, 100);
+
+		const canvas = document.querySelector('#c');
+
+		// Init the renderer
+		const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+
+		renderer.shadowMap.enabled = true;
+		renderer.setPixelRatio(window.devicePixelRatio);
+
+		var cameraFar = 6;
+
+		document.body.appendChild(renderer.domElement);
+
+		// Add a camerra
+		var camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.5, 2000);
+		camera.position.z = cameraFar;
+		camera.position.x = 0;
+		
+		const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(2048)
+		const cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRenderTarget)
+		scene.add(cubeCamera)
+		
+		//HDRi
+		const textureLoader = new THREE.TextureLoader();
+		var textureEquirec = textureLoader.load( '/img/textures/terrain/autumn_park_BG.jpg' );
+		/*var textureEquirec = textureLoader.load( '/img/textures/terrain/Norway.jpg' );*/
+		textureEquirec.mapping = THREE.EquirectangularReflectionMapping;
+		textureEquirec.encoding = THREE.sRGBEncoding;
+		scene.background = textureEquirec;
+		scene.environment = textureEquirec;
+		
+		const GlassRenderTarget =
+		  new THREE.WebGLCubeRenderTarget(256, {
+		      format: THREE.RGBFormat,
+			  generateMipmaps: true,
+			  encoding: THREE.sRGBEncoding,
+			  minFilter: THREE.LinearMipmapLinearFilter})
+			
+		const mirrorCamera = new THREE.CubeCamera(1, 1000, GlassRenderTarget);
+		
+		// Initial material	
+		//Colors		
+		const ART_INITIAL_MTL = new THREE.MeshPhongMaterial({ color: 0xf5f0f0, shininess: 10 });
+		const ROOF_INITIAL_MTL = new THREE.MeshPhongMaterial({ color: 0x0f0f0f, shininess: 20 }); 
+		const STONE_INITIAL_MTL = new THREE.MeshPhongMaterial({ color: 0x948f82, shininess: 20 }); 		
+		const GLASS_INITIAL_MTL = new THREE.MeshPhysicalMaterial({
+			metalness: 1.0,
+			roughness: 0.1,
+			envMap: cubeRenderTarget.texture,
+			refractionRatio: 0.95,
+			transparent: true,
+			opacity: 0.75,
+			transmission: 0.1,
+			side: THREE.FrontSide,
+			clearcoat: 1.0,
+			clearcoatRoughness: 0.39,
+			envMap: GlassRenderTarget.texture
+		})
+		
+		//Textures		
+		let txt_bright_wood = new THREE.TextureLoader().load('/img/textures/furniture/wood.jpg');
+		txt_bright_wood.repeat.set(1,1,1);
+		txt_bright_wood.wrapS = THREE.RepeatWrapping;
+		txt_bright_wood.wrapT = THREE.RepeatWrapping;
+		//ttxt_bright_wood.encoding = THREE.sRGBEncoding;
+		const BRIGHTWOOD_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_bright_wood,
+			  shininess : 10 });
+		
+		let txt_terrace_border = new THREE.TextureLoader().load('/img/textures/terrain/TerraceBorder.jpg');
+		txt_terrace_border.repeat.set(1,1,1);
+		txt_terrace_border.wrapS = THREE.RepeatWrapping;
+		txt_terrace_border.wrapT = THREE.RepeatWrapping;
+		//txt_terrace_border.encoding = THREE.sRGBEncoding;
+		const TERRACEBORDER_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_terrace_border,
+			  shininess : 10 });
+			  
+		let txt_terrace_steps = new THREE.TextureLoader().load('/img/textures/terrain/Sidewalk.jpg');
+		txt_terrace_steps.repeat.set(1,1,1);
+		txt_terrace_steps.wrapS = THREE.RepeatWrapping;
+		txt_terrace_steps.wrapT = THREE.RepeatWrapping;
+		//txt_txt_terrace_steps.encoding = THREE.sRGBEncoding;
+		const TERRACESTEPS_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_terrace_steps,
+			  shininess : 10 });
+			  
+		let txt_terrace_steps_black = new THREE.TextureLoader().load('/img/textures/terrain/Sidewalk_black.jpg');
+		txt_terrace_steps_black.repeat.set(1,1,1);
+		txt_terrace_steps_black.wrapS = THREE.RepeatWrapping;
+		txt_terrace_steps_black.wrapT = THREE.RepeatWrapping;
+		//txt_terrace_steps_black.encoding = THREE.sRGBEncoding;
+		const TERRACESTEPSBLACK_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_terrace_steps_black,
+			  shininess : 10 });
+		
+		let txt_old_bricks = new THREE.TextureLoader().load('/img/textures/terrain/OldBricks.jpg');
+		txt_old_bricks.repeat.set(1,1,1);
+		txt_old_bricks.wrapS = THREE.RepeatWrapping;
+		txt_old_bricks.wrapT = THREE.RepeatWrapping;
+		//txt_old_bricks.encoding = THREE.sRGBEncoding;
+		const OLDBRICKS_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_old_bricks,
+			  shininess : 10 });
+		
+		let txt_wood_walls_def = new THREE.TextureLoader().load('/img/textures/wood/236_txt.jpg');
+		txt_wood_walls_def.repeat.set(1.1, 1.1, 1.1);
+		txt_wood_walls_def.wrapS = THREE.RepeatWrapping;
+		txt_wood_walls_def.wrapT = THREE.RepeatWrapping;
+		//txt_wood_walls_def.encoding = THREE.sRGBEncoding;
+		const WALLS_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_wood_walls_def,
+			  shininess : 10 });
+			  
+		let txt_wood_corners = new THREE.TextureLoader().load('/img/textures/wood/211_txt_cl.jpg');
+		//let txt_wood_corners = new THREE.TextureLoader().load('/img/textures/wood/Wood_256.jpg');
+		txt_wood_corners.repeat.set(2, 2, 2);
+		txt_wood_corners.wrapS = THREE.RepeatWrapping;
+		txt_wood_corners.wrapT = THREE.RepeatWrapping;
+		//txt_wood_corners.encoding = THREE.sRGBEncoding;
+		const WOODCORNERS_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_wood_corners,
+			  shininess : 0 });
+			  
+		let txt_teracce = new THREE.TextureLoader().load('/img/textures/wood/409_txt.jpg');
+		txt_teracce.repeat.set(0.9, 0.9, 0.9);
+		txt_teracce.wrapS = THREE.RepeatWrapping;
+		txt_teracce.wrapT = THREE.RepeatWrapping;
+		//txt_wood_walls_def.encoding = THREE.sRGBEncoding;
+		const TERACCE_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_teracce,
+			  shininess : 10 });
+			  
+		let txt_plant = new THREE.TextureLoader().load('/img/textures/trees/leafes/plant.png');
+		txt_plant.repeat.set(1,1,1);
+		txt_plant.wrapS = THREE.RepeatWrapping;
+		txt_plant.wrapT = THREE.RepeatWrapping;
+		txt_plant.encoding = THREE.sRGBEncoding;
+		const PLANT_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_plant,
+			  shininess : 10,
+			  transparent: true});
+			  
+		let txt_tree = new THREE.TextureLoader().load('/img/textures/trees/tree/Bark_7.jpg');
+		txt_tree.repeat.set(1, 1, 1);
+		txt_tree.wrapS = THREE.RepeatWrapping;
+		txt_tree.wrapT = THREE.RepeatWrapping;
+		//txt_wood_walls_def.encoding = THREE.sRGBEncoding;
+		const TREE_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_tree,
+			  shininess :10 });
+			  
+		let txt_leaf1 = new THREE.TextureLoader().load('/img/textures/trees/leafes/Leaf_2_s.png');
+		txt_leaf1.repeat.set(0.8,0.8,0.8);
+		txt_leaf1.wrapS = THREE.RepeatWrapping;
+		txt_leaf1.wrapT = THREE.RepeatWrapping;
+		txt_leaf1.encoding = THREE.sRGBEncoding;
+		const LEAF1_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_leaf1,
+			  shininess : 10,
+			  transparent: true});
+			  
+		let txt_leaf2 = new THREE.TextureLoader().load('/img/textures/trees/leafes/Leaf_1_s.png');
+		txt_leaf2.repeat.set(0.5,0.5,0.5);
+		txt_leaf2.wrapS = THREE.RepeatWrapping;
+		txt_leaf2.wrapT = THREE.RepeatWrapping;
+		txt_leaf2.encoding = THREE.sRGBEncoding;
+		const LEAF2_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_leaf2,
+			  shininess : 10,
+			  transparent: true});
+		
+		let txt_leaf3 = new THREE.TextureLoader().load('/img/textures/trees/leafes/Leaf_4_s.png');
+		txt_leaf3.repeat.set(2,2,2);
+		txt_leaf3.wrapS = THREE.RepeatWrapping;
+		txt_leaf3.wrapT = THREE.RepeatWrapping;
+		txt_leaf3.encoding = THREE.sRGBEncoding;
+		const LEAF3_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_leaf3,
+			  shininess : 10,
+			  transparent: true });
+
+		let txt_fence = new THREE.TextureLoader().load('/img/textures/wood/250_txt.jpg');
+		txt_fence.repeat.set(1,1,1);
+		txt_fence.wrapS = THREE.RepeatWrapping;
+		txt_fence.wrapT = THREE.RepeatWrapping;
+		txt_fence.encoding = THREE.sRGBEncoding;
+		const FENCE_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_fence,
+			  shininess : 10 });
+			  
+		let txt_chair = new THREE.TextureLoader().load('/img/textures/chair/rattan.jpg');
+		txt_chair.repeat.set(1,1,1);
+		txt_chair.wrapS = THREE.RepeatWrapping;
+		txt_chair.wrapT = THREE.RepeatWrapping;
+		txt_chair.encoding = THREE.sRGBEncoding;
+		const CHAIR_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_chair,
+			  shininess : 10 });
+		
+		let txt_cloth = new THREE.TextureLoader().load('/img/textures/chair/cloth.jpg');
+		txt_cloth.repeat.set(1,1,1);
+		txt_cloth.wrapS = THREE.RepeatWrapping;
+		txt_cloth.wrapT = THREE.RepeatWrapping;
+		txt_cloth.encoding = THREE.sRGBEncoding;
+		const CLOTH_INITIAL_MTL = new THREE.MeshPhongMaterial({
+		  map: txt_cloth,
+			  shininess : 10 });
+
+		const INITIAL_MAP = [
+		{ childID: "tiles_web", mtl: ROOF_INITIAL_MTL },
+		{ childID: "glass_web", mtl: GLASS_INITIAL_MTL },
+		{ childID: "terrace", mtl: TERACCE_INITIAL_MTL },
+		{ childID: "walls_web", mtl: WALLS_INITIAL_MTL },
+		{ childID: "wood_corners_web", mtl: WOODCORNERS_INITIAL_MTL },
+		{ childID: "wnd", mtl: WOODCORNERS_INITIAL_MTL },
+		{ childID: "windows_borders_web", mtl: WOODCORNERS_INITIAL_MTL },
+		{ childID: "tree", mtl: TREE_INITIAL_MTL },
+		{ childID: "lfs_web", mtl: LEAF1_INITIAL_MTL},
+		{ childID: "leaves1", mtl: LEAF2_INITIAL_MTL },
+		{ childID: "leaves2", mtl: LEAF2_INITIAL_MTL },
+		{ childID: "Chair", mtl: CHAIR_INITIAL_MTL },
+		{ childID: "Cloth", mtl: CLOTH_INITIAL_MTL },
+		{ childID: "stone2", mtl: STONE_INITIAL_MTL },
+		{ childID: "Foundation_wall", mtl: OLDBRICKS_INITIAL_MTL },
+		{ childID: "Foundation_ledge", mtl: TERRACEBORDER_INITIAL_MTL },
+		{ childID: "Porch_Stairs", mtl: TERRACESTEPS_INITIAL_MTL },
+		{ childID: "Path", mtl: TERRACESTEPS_INITIAL_MTL },
+		{ childID: "Borders", mtl: TERRACESTEPSBLACK_INITIAL_MTL },
+		{ childID: "Outdoor_chair", mtl: BRIGHTWOOD_INITIAL_MTL },
+		{ childID: "Table", mtl: BRIGHTWOOD_INITIAL_MTL },
+		{ childID: "crate", mtl: BRIGHTWOOD_INITIAL_MTL },
+		{ childID: "Decorative_Bottom", mtl: BRIGHTWOOD_INITIAL_MTL },
+		{ childID: "Art", mtl: ART_INITIAL_MTL },
+		{ childID: "Top", mtl: ART_INITIAL_MTL },  
+		{ childID: "Plant_pot", mtl: ART_INITIAL_MTL },
+		{ childID: "innerWalls", mtl: ART_INITIAL_MTL },
+		{ childID: "ceiling", mtl: BRIGHTWOOD_INITIAL_MTL },
+		{ childID: "Flower", mtl: PLANT_INITIAL_MTL },
+		{ childID: "fence", mtl: FENCE_INITIAL_MTL },
+		{ childID: "Cube", mtl: WOODCORNERS_INITIAL_MTL },
+		{ childID: "under_roof", mtl: WOODCORNERS_INITIAL_MTL }];  
+				
+			  
+		// Init the object loader
+		var loader = new GLTFLoader();
+		//DRACO Loader
+		const dracoLoader = new DRACOLoader();
+		dracoLoader.setDecoderPath( '/jsm/draco/' );
+		loader.setDRACOLoader( dracoLoader );
+
+		const texture_loader = new THREE.TextureLoader();
+
+		loader.load(MODEL_PATH, function (gltf) {
+		  theModel = gltf.scene;
+
+		  theModel.traverse(o => {
+			if (o.isMesh) {
+			  o.castShadow = true;
+			  o.receiveShadow = true;
+			}
+		  });
+
+		  // Set the models initial scale   
+		  theModel.scale.set(3, 3, 3);
+		  //theModel.rotation.y = Math.PI;
+		  theModel.rotation.y = 194;
+
+		  // Offset the y position a bit
+		  theModel.position.y = -1;
+
+		  // Set initial textures
+		  for (let object of INITIAL_MAP) {
+			initColor(theModel, object.childID, object.mtl);
+		  }
+
+		  // Add the model to the scene
+		  scene.add(theModel);
+
+		  // Remove the loader
+		  LOADER.remove();
+
+		}, undefined, function (error) {
+		  console.error(error);
+		});
+
+		// Function - Add the textures to the models
+		function initColor(parent, type, mtl) {
+		  parent.traverse(o => {
+			if (o.isMesh) {
+			  if (o.name.includes(type)) {
+				o.material = mtl;
+				o.nameID = type; // Set a new property to identify this object
+			  }
+			}
+		  });
+		}
+
+		// Add lights	
+		var hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.71);
+		hemiLight.position.set(0, 50, 0);
+		// Add hemisphere light to scene   
+		scene.add(hemiLight);
+
+		var dirLight = new THREE.DirectionalLight(0xffffff, 0.74);
+		dirLight.position.set(20, 50, 20);
+		dirLight.castShadow = true;
+		dirLight.shadow.mapSize = new THREE.Vector2(1024, 1024);
+		// Add directional Light to scene    
+		scene.add(dirLight);
+		
+		var downLight = new THREE.DirectionalLight(0xffffff, 0.25);
+		//var downLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.31);
+		downLight.position.set(0, -1, 0);
+		downLight.castShadow = false;
+		//downLight.shadow.mapSize = new THREE.Vector2(512, 512);
+		// Add directional Light to scene    
+		scene.add(downLight);
+
+		// Floor
+		var floorGeometry = new THREE.PlaneGeometry(500, 500);
+
+		const groundTexture = texture_loader.load( '/img/textures/terrain/grasslight-big_4.jpg' );
+		groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+		groundTexture.repeat.set( 380, 380 );
+		groundTexture.anisotropy = 16;
+		groundTexture.encoding = THREE.sRGBEncoding;
+		var floorMaterial = new THREE.MeshLambertMaterial( { map: groundTexture, opacity: 0.5} );
+
+		var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+		floor.rotation.x = - Math.PI / 2;
+		floor.receiveShadow = true;
+		floor.position.y = -1;
+		scene.add(floor);
+
+		//HDRi
+		//const textureLoader = new THREE.TextureLoader();
+		//var textureEquirec = textureLoader.load( '/img/textures/terrain/autumn_park_BG.jpg' );
+		//textureEquirec.mapping = THREE.EquirectangularReflectionMapping;
+		//textureEquirec.encoding = THREE.sRGBEncoding;
+		//scene.background = textureEquirec;
+		//scene.environment = textureEquirec;
+		
+		
+		//Forest
+		const vertices = [];
+		const vertices2 = [];
+		const vertices3 = [];
+		const vertices4 = [];
+		var material, material2, mesh, sprite, sprite2, particles, particles2, material3, material4, sprite3, sprite4, particles3, particles4;
+		var geometry = new THREE.BufferGeometry;
+		var image = document.createElement('img');
+		image.src = '/img/textures/tree/tree1.png';
+		sprite = new THREE.Texture(image);
+		sprite.needsUpdate = true;
+		
+		for (var i = 0; i < 5000; i++) {
+			
+		    const x = 2000 * Math.random() - 1000;
+			const y = 5;
+			const z = 2000 * Math.random() - 1000;
+			if  ((z > 30 && x > 30) ||
+				 (z > 30 && x < -30) ||
+				 (z < -30 && x < -30) ||
+				 (z < -30 && x > 30) ||
+				 (z < -30 && x != 0) ||
+				 (z > 30 && x != 0) ||
+				 (x < -30 && z != 0)||
+				 (x > 30 && z != 0)){
+			  vertices.push(x, y, z);}
+		}
+		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+		
+		material = new THREE.PointsMaterial({
+			size: 35,
+			sizeAttenuation: true,
+			map: sprite,
+			transparent: true,
+			alphaTest: 0.5
+		});
+		// material.color.setHSL(1.0, 0.3, 0.7);
+		particles = new THREE.Points(geometry, material);
+		// particles.sortParticles = true;
+		// Using material.alphaTest = 0.5 instead
+		// Thanks @WestLangley
+		scene.add(particles);
+		
+		var geometry2 = new THREE.BufferGeometry;
+		var image2 = document.createElement('img');
+		image2.src = '/img/textures/tree/tree2.png';
+		sprite2 = new THREE.Texture(image2);
+		sprite2.needsUpdate = true;
+		
+		for (var i = 0; i < 4000; i++) {
+			
+		    const x = 2000 * Math.random() - 1000;
+			const y = 5;
+			const z = 2000 * Math.random() - 1000;
+			if  ((z > 30 && x > 30) ||
+				 (z > 30 && x < -30) ||
+				 (z < -30 && x < -30) ||
+				 (z < -30 && x > 30) ||
+				 (z < -30 && x != 0) ||
+				 (z > 30 && x != 0) ||
+				 (x < -30 && z != 0)||
+				 (x > 30 && z != 0)){
+			  vertices2.push(x, y, z);}
+		}
+		geometry2.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices2, 3 ) );
+		
+		material2 = new THREE.PointsMaterial({
+			size: 30,
+			sizeAttenuation: true,
+			map: sprite2,
+			transparent: true,
+			alphaTest: 0.5
+		});
+		particles2 = new THREE.Points(geometry2, material2);
+		scene.add(particles2);
+		
+		var geometry3 = new THREE.BufferGeometry;
+		var image3 = document.createElement('img');
+		image3.src = '/img/textures/tree/tree3.png';
+		sprite3 = new THREE.Texture(image3);
+		sprite3.needsUpdate = true;
+		
+		for (var i = 0; i < 3000; i++) {
+			
+		    const x = 2000 * Math.random() - 1000;
+			const y = 5;
+			const z = 2000 * Math.random() - 1000;
+			if  ((z > 30 && x > 30) ||
+				 (z > 30 && x < -30) ||
+				 (z < -30 && x < -30) ||
+				 (z < -30 && x > 30) ||
+				 (z < -30 && x != 0) ||
+				 (z > 30 && x != 0) ||
+				 (x < -30 && z != 0)||
+				 (x > 30 && z != 0)){
+			  vertices3.push(x, y, z);}
+		}
+		geometry3.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices3, 3 ) );
+		
+		material3 = new THREE.PointsMaterial({
+			size: 30,
+			sizeAttenuation: true,
+			map: sprite3,
+			transparent: true,
+			alphaTest: 0.5
+		});
+		particles3 = new THREE.Points(geometry3, material3);
+		scene.add(particles3);
+		
+		var geometry4 = new THREE.BufferGeometry;
+		var image4 = document.createElement('img');
+		image4.src = '/img/textures/tree/tree4.png';
+		sprite4 = new THREE.Texture(image4);
+		sprite4.needsUpdate = true;
+		
+		for (var i = 0; i < 4000; i++) {
+			
+		    const x = 2000 * Math.random() - 1000;
+			const y = 3;
+			const z = 2000 * Math.random() - 1000;
+			if  ((z > 30 && x > 30) ||
+				 (z > 30 && x < -30) ||
+				 (z < -30 && x < -30) ||
+				 (z < -30 && x > 30) ||
+				 (z < -30 && x != 0) ||
+				 (z > 30 && x != 0) ||
+				 (x < -30 && z != 0)||
+				 (x > 30 && z != 0)){
+			  vertices4.push(x, y, z);}
+		}
+		geometry4.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices4, 3 ) );
+		
+		material4 = new THREE.PointsMaterial({
+			size: 15,
+			sizeAttenuation: true,
+			map: sprite4,
+			transparent: true,
+			alphaTest: 0.5
+		});
+		particles4 = new THREE.Points(geometry4, material4);
+		scene.add(particles4);
+		
+
+		// Add controls
+		var controls = new OrbitControls(camera, renderer.domElement);
+		//controls.maxPolarAngle = Math.PI / 2;
+		controls.maxPolarAngle = 1.65;
+		controls.minPolarAngle = Math.PI / 3;
+		controls.enableDamping = true;
+		controls.enablePan = false;
+		controls.dampingFactor = 0.1;
+		controls.autoRotate = false; // Toggle this if you'd like the chair to automatically rotate
+		controls.autoRotateSpeed = 0.2; // 30
+		controls.minDistance = 3;
+		controls.maxDistance = 10;
+
+		function animate() {
+
+		  controls.update();
+		  renderer.render(scene, camera);
+		  requestAnimationFrame(animate);
+		  mirrorCamera.update(renderer, scene);
+
+		  if (resizeRendererToDisplaySize(renderer)) {
+			const canvas = renderer.domElement;
+			camera.aspect = canvas.clientWidth / canvas.clientHeight;
+			camera.updateProjectionMatrix();
+		  }
+
+		  if (theModel != null && loaded == false) {
+			initialRotation();
+			DRAG_NOTICE.classList.add('start');
+		  }
+		}
+
+		animate();
+
+		// Function - New resizing method
+		function resizeRendererToDisplaySize(renderer) {
+		  const canvas = renderer.domElement;
+		  var width = window.innerWidth;
+		  var height = window.innerHeight;
+		  var canvasPixelWidth = canvas.width / window.devicePixelRatio;
+		  var canvasPixelHeight = canvas.height / window.devicePixelRatio;
+
+		  const needResize = canvasPixelWidth !== width || canvasPixelHeight !== height;
+		  if (needResize) {
+
+			renderer.setSize(width, height, false);
+		  }
+		  return needResize;
+		}
+
+		/*
+		// Function - Build Colors
+
+		function buildColors(colors) {
+		  for (let [i, color] of colors.entries()) {
+			let swatch = document.createElement('div');
+			if (activeOption === "terrace") {
+			  swatch.classList.add('tray__swatch_terrace');
+			} else {
+			  swatch.classList.add('tray__swatch');
+		  };
+
+			if (color.texture)
+			{
+			  swatch.style.backgroundImage = "url(" + color.texture + ")";
+			} else
+			{
+			  swatch.style.background = "#" + color.color;
+			}
+
+			swatch.setAttribute('data-key', i);
+			if (activeOption === "terrace") {
+			  TRAY_TERRACE.append(swatch);
+			} else
+			{
+			  TRAY.append(swatch);
+			}
+		  }
+		}
+		*/
+		//First build for faster loading
+		activeOption = 'terrace';
+		activeOption = 'walls_web';
+		/*
+		buildColors(colors_terrace)
+		TRAY_TERRACE.style.visibility = 'hidden';			
+		buildColors(colors);
+		*/
+		
+		function buildColors2(colors) {
+		  for (let [i, color] of colors.entries()) {
+			let swatch = document.createElement('div');
+			swatch.classList.add('tray__swatch_tile');
+
+			if (color.texture)
+			{
+			  swatch.style.backgroundImage = "url(" + color.texture + ")";
+			} else
+			{
+			  swatch.style.background = "#" + color.color;
+			}
+
+			swatch.setAttribute('data-key', i);
+			TRAY_TILES.append(swatch);
+		  }
+		}
+
+		buildColors2(colors2);
+
+		/*
+		// Select Option
+		const options = document.querySelectorAll(".option");
+
+		for (const option of options) {
+		  option.addEventListener('click', selectOption);
+		}
+
+		function selectOption(e) {
+		  let option = e.target;
+		  activeOption = e.target.dataset.option;
+		  for (const otherOption of options) {
+			otherOption.classList.remove('--is-active');
+		  }
+		  option.classList.add('--is-active');
+		  		  
+		  //Reset Colors - set new array		 		  
+		  if (activeOption === "terrace") {
+		    TRAY_TERRACE.style.visibility = 'visible';
+		    TRAY.style.visibility = 'hidden';
+			//slide(slider_terrace, sliderItems_terrace);			
+		  } else {
+		    TRAY_TERRACE.style.visibility = 'hidden';
+		    TRAY.style.visibility = 'visible';	
+			//slide(slider, sliderItems);    		   
+		  };		  	   
+		};
+		*/
+
+		// Swatches		
+		const swatches_tiles = document.querySelectorAll(".tray__swatch_tile");
+
+		for (const swatch_tile of swatches_tiles) {
+		  swatch_tile.addEventListener('click', selectSwatch_tile);
+		}
+		function selectSwatch_tile(e) {
+		  let color = colors2[parseInt(e.target.dataset.key)];
+		  let new_mtl;
+		  new_mtl = new THREE.MeshPhongMaterial({
+			  color: parseInt('0x' + color.color),
+			  shininess: color.shininess ? color.shininess : 10 });
+		  setMaterial(theModel, "tiles_web", new_mtl);
+		}
+		
+		/*
+		const swatches_terrace = document.querySelectorAll(".tray__swatch_terrace");
+
+		for (const swatch of swatches_terrace) {
+		  swatch.addEventListener('click', selectSwatch);
+		}	
+		
+		const swatches = document.querySelectorAll(".tray__swatch");
+
+		for (const swatch of swatches) {
+		  swatch.addEventListener('click', selectSwatch);
+		}
+
+		function selectSwatch(e) {
+		  let color = colors[parseInt(e.target.dataset.key)];
+		  let color_terrace = colors_terrace[parseInt(e.target.dataset.key)];
+		  let new_mtl;
+		  let txt = new THREE.TextureLoader();
+		  let texture_file;
+		 
+		  if (color.texture) {
+			if (activeOption  === "walls_web"){
+			  texture_file = color.txt_file;
+			}
+			else if (activeOption  === "terrace"){
+			  texture_file = color_terrace.txt_file;
+			}
+			else
+			{
+			  texture_file = color.clr_file;
+			}
+			
+			let txt = new THREE.TextureLoader().load(texture_file);
+			if (activeOption  === "walls_web" || activeOption  === "terrace"){
+				txt.repeat.set(color.size[0], color.size[1], color.size[2]);
+			} else {
+				txt.repeat.set(color.size[0] * 4, color.size[1] * 4, color.size[2] * 4);}			
+			txt.wrapS = THREE.RepeatWrapping;
+			txt.wrapT = THREE.RepeatWrapping;
+
+			new_mtl = new THREE.MeshPhongMaterial({
+			  map: txt,
+			  shininess: color.shininess ? color.shininess : 10 });
+
+		  } else
+
+		  {
+			new_mtl = new THREE.MeshPhongMaterial({
+			  color: parseInt('0x' + color.color),
+			  shininess: color.shininess ? color.shininess : 10 });
+		  }
+
+		  setMaterial(theModel, activeOption, new_mtl);
+		}
+		*/
+
+		function setMaterial(parent, type, mtl) {
+		  parent.traverse(o => {
+			if (o.isMesh && o.nameID != null) {
+			  if (o.nameID == type) {
+				o.material = mtl;
+			  }
+			}
+		  });
+		}
+
+		// Function - Opening rotate
+		let initRotate = 0;
+
+		function initialRotation() {
+		  theModel.rotation.y += 6.1;
+		  loaded = true;
+		  	
+		  /*initRotate++;
+		  if (initRotate <= 120) {
+			theModel.rotation.y += Math.PI / 60;
+		  } else {
+			loaded = true;
+		  }*/
+		}
+
+		/*
+		var slider = document.getElementById('js-tray'),sliderItems = document.getElementById('js-tray-slide'),difference;
+		var slider_terrace = document.getElementById('js-tray'),sliderItems_terrace = document.getElementById('js-tray-slide_terrace'),difference;
+		
+		function slide(wrapper, items) {
+		  var posX1 = 0,
+		  posX2 = 0,
+		  posInitial,
+		  threshold = 20,
+		  posFinal,
+		  slides = items.getElementsByClassName('tray__swatch');
+
+		  // Mouse events
+		  items.onmousedown = dragStart;
+
+		  // Touch events
+		  items.addEventListener('touchstart', dragStart);
+		  items.addEventListener('touchend', dragEnd);
+		  items.addEventListener('touchmove', dragAction);
+
+
+		  function dragStart(e) {
+			e = e || window.event;
+			posInitial = items.offsetLeft;
+			//difference = sliderItems.offsetWidth - slider.offsetWidth;
+			difference = items.offsetWidth - wrapper.offsetWidth;
+			difference = difference * -1;
+
+			if (e.type == 'touchstart') {
+			  posX1 = e.touches[0].clientX;
+			} else {
+			  posX1 = e.clientX;
+			  document.onmouseup = dragEnd;
+			  document.onmousemove = dragAction;
+			}
+		  }
+
+		  function dragAction(e) {
+			e = e || window.event;
+
+			if (e.type == 'touchmove') {
+			  posX2 = posX1 - e.touches[0].clientX;
+			  posX1 = e.touches[0].clientX;
+			} else {
+			  posX2 = posX1 - e.clientX;
+			  posX1 = e.clientX;
+			}
+
+			if (items.offsetLeft - posX2 <= 0 && items.offsetLeft - posX2 >= difference) {
+			  items.style.left = items.offsetLeft - posX2 + "px";
+			}
+		  }
+
+		  function dragEnd(e) {
+			posFinal = items.offsetLeft;
+			if (posFinal - posInitial < -threshold) {
+
+			} else if (posFinal - posInitial > threshold) {
+
+			} else {
+			  items.style.left = posInitial + "px";
+			}
+
+			document.onmouseup = null;
+			document.onmousemove = null;
+		  }
+
+		}
+
+		slide(slider, sliderItems);
+		slide(slider_terrace, sliderItems_terrace);
+		*/
+		
+		function selectColour(data) {
+		 	  
+		  let new_mtl;
+		  let txt = new THREE.TextureLoader();
+		  let texture_file;
+		 		  		  
+		  if (data.selectedData.imageSrc) {
+		  
+			if (activeOption  === "walls_web"){
+			  texture_file = data.selectedData.txt_file;
+			}
+			else if (activeOption  === "terrace"){
+			  texture_file = data.selectedData.txt_file;
+			}
+			else
+			{
+			  texture_file = data.selectedData.clr_file;
+			}
+			
+			let txt = new THREE.TextureLoader().load(texture_file);
+			if (activeOption  === "walls_web" || activeOption  === "terrace"){
+				txt.repeat.set(data.selectedData.size[0], data.selectedData.size[1], data.selectedData.size[2]);
+			} else {
+				txt.repeat.set(data.selectedData.size[0] * 4, data.selectedData.size[1] * 4, data.selectedData.size[2] * 4);}			
+			txt.wrapS = THREE.RepeatWrapping;
+			txt.wrapT = THREE.RepeatWrapping;
+
+			new_mtl = new THREE.MeshPhongMaterial({
+			  map: txt,
+			  shininess: data.selectedData.shininess ? data.selectedData.shininess : 10 });
+
+		  } else
+
+		  {
+			new_mtl = new THREE.MeshPhongMaterial({
+			  color: parseInt('0x' + color.color),
+			  shininess: data.selectedData.shininess ? data.selectedData.shininess : 10 });
+		  }
+		  if (theModel) {
+		  	setMaterial(theModel, activeOption, new_mtl);
+		  }
+		}
+				
+			$('#myDD_Fassade').ddslick({
+			data:ddData,
+			width:300,
+			height:400,
+			//defaultSelectedIndex: 20,
+			selectText: "Wähle Deine Farbe",
+			imagePosition:"right",
+			onSelected: function(data){	
+			  activeOption = 'walls_web';			  
+			  selectColour(data);			
+			}   	
+			});	
+			$('#myDD_Eckbretter').ddslick({
+			data:ddData,
+			width:300,
+			height:400,
+			//defaultSelectedIndex: 1,
+			selectText: "Wähle Deine Farbe",
+			imagePosition:"right",
+			onSelected: function(data){
+				activeOption = 'wood_corners_web';			    
+				selectColour(data);
+		}   	
+		});
+			$('#myDD_Dachkasten').ddslick({
+			data:ddData,
+			width:300,
+			height:400,
+			//defaultSelectedIndex: 1,
+			selectText: "Wähle Deine Farbe",
+			imagePosition:"right",
+			onSelected: function(data){
+				activeOption = 'under_roof';
+				selectColour(data);
+		}   	
+		});
+			$('#myDD_Rahmungen').ddslick({
+			data:ddData,
+			width:300,
+			height:400,
+			//defaultSelectedIndex: 1,
+			selectText: "Wähle Deine Farbe",
+			imagePosition:"right",
+			onSelected: function(data){
+				activeOption = 'windows_borders_web';
+				selectColour(data);
+		}   	
+		});
+			$('#myDD_Zierklotzen').ddslick({
+			data:ddData,
+			width:300,
+			height:400,
+			//defaultSelectedIndex: 1,
+			selectText: "Wähle Deine Farbe",
+			imagePosition:"right",
+			onSelected: function(data){
+				activeOption = 'Cube';
+				selectColour(data);
+		}   	
+		});
+			$('#myDD_Fenster').ddslick({
+			data:ddData,
+			width:300,
+			height:400,
+			//defaultSelectedIndex: 1,
+			selectText: "Wähle Deine Farbe",
+			imagePosition:"right",
+			onSelected: function(data){
+				activeOption = 'wnd';
+				selectColour(data);
+		}   	
+		});
+			$('#myDD_Terasse').ddslick({
+			data:ddData_Terracce,
+			width:300,
+			height:400,
+			//defaultSelectedIndex: 11,
+			selectText: "Wähle Deine Farbe",
+			imagePosition:"right",
+			onSelected: function(data){
+				activeOption = 'terrace';
+				selectColour(data);
+		}   	
+		});
+		
+		$('#myDD_Fassade').ddslick('select', {index: 20 });
+		$('#myDD_Eckbretter').ddslick('select', {index: 1 });
+		$('#myDD_Dachkasten').ddslick('select', {index: 1 });
+		$('#myDD_Rahmungen').ddslick('select', {index: 1 });
+		$('#myDD_Zierklotzen').ddslick('select', {index: 1 });
+		$('#myDD_Fenster').ddslick('select', {index: 1 });
+		$('#myDD_Terasse').ddslick('select', {index: 11 });
+	</script>
+</body>
+
+</html>
